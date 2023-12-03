@@ -100,7 +100,19 @@ async function run() {
       res.send(result);
     })
 
-
+    // Downvote update 
+    app.patch('/updateDownVote/:id', async(req, res) => {
+      const id = req.params.id;
+      // console.log(id);
+      const filter = {_id: new ObjectId(id)};
+      const getPreviousVote = req.body;
+      console.log(getPreviousVote);
+      const updatePost = {
+        $set: {downVote: getPreviousVote.downVote + 1}
+      }
+      const result = await postCollection.updateOne(filter, updatePost);
+      res.send(result);
+    })
 
 
 
