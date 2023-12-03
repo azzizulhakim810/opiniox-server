@@ -27,53 +27,52 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
 
-    const postCollection = client.db('opinioXDB').collection('posts');
+    const postCollection = client.db('opinioXDB').collection('allposts');
 
  // Load all posts
-app.get('/posts', async (req, res) => {
-  try {
-    const page = parseInt(req.query.page);
-    const size = parseInt(req.query.size);
+ app.get('/posts', async (req, res) => {
+  const page = parseInt(req.query.page);
+  const size = parseInt(req.query.size);
+  const sortSystem = req.query.sortSystem || 'popular';
 
-    const sortSystem = req.query.sortSystem || 'popular';
+  // Validate that page and size are valid integers, defaulting to 0 and 10 if not provided
+  const validPage = isNaN(page) ? 0 : Math.max(0, page);
+  const validSize = isNaN(size) ? 10 : Math.max(1, size); // Adjust the minimum size as needed
 
-    let sortQuery;
-    if (sortSystem === 'newest') {
-      sortQuery = { time: -1 };
-    } else if (sortSystem === 'popular') {
-      sortQuery = { voteDifference: -1 };
-    } else {
-      sortQuery = { time: -1 };
-    }
-
-    const aggregationPipeline = [
-      {
-        $addFields: {
-          voteDifference: { $subtract: ["$upVote", "$downVote"] }
-        }
-      },
-      {
-        $sort: sortQuery
-      },
-    ];
-
-    // Find operation with aggregation pipeline
-    const result = await postCollection.aggregate(aggregationPipeline)
-    .skip(page*size)
-    .limit(size)
-    .toArray();
-
-    res.send(result);
-  } catch (error) {
-    console.error('Error fetching posts:', error);
-    res.status(500).send('Internal Server Error');
+  let sortQuery;
+  if (sortSystem === 'newest') {
+    sortQuery = { time: -1 };
+  } else if (sortSystem === 'popular') {
+    sortQuery = { voteDifference: -1 };
+  } else {
+    sortQuery = { time: -1 };
   }
+
+  const aggregationPipeline = [
+    {
+      $addFields: {
+        voteDifference: { $subtract: ["$upVote", "$downVote"] }
+      }
+    },
+    {
+      $sort: sortQuery
+    },
+  ];
+
+  const result = await postCollection.aggregate(aggregationPipeline)
+    .skip(validPage * validSize)
+    .limit(validSize)
+    .toArray();
+  
+  res.send(result);
 });
 
 
-    // Load Single Post 
-    app.get('/posts/singlePost/:id', async(req, res) => {
+
+
+    app.get('/posts/single/:id', async(req, res) => {
       const id = req.params.id;
+      // console.log(id);
       const query = {_id: new ObjectId(id)};
       const result = await postCollection.findOne(query);
       res.send(result);
@@ -83,6 +82,22 @@ app.get('/posts', async (req, res) => {
     app.get('/postsCount', async(req, res) => {
       const count = await postCollection.estimatedDocumentCount();
       res.send({count})
+    })
+
+    // Upvote update 
+    app.patch('/updateUpVote/:id', async(req, res) => {
+      const id = req.params.id;
+      // console.log(id);
+      const filter = {_id: new ObjectId(id)};
+      const getPreviousVote = req.body;
+      console.log(getPreviousVote);
+      const updatePost = {
+        $set: {votesCount: getPreviousVote.votesCount + 1,
+          upVote: getPreviousVote.upVote + 1
+        }
+      }
+      const result = await postCollection.updateOne(filter, updatePost);
+      res.send(result);
     })
 
 
