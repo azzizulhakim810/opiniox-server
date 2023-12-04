@@ -27,12 +27,13 @@ async function run() {
 
     const postCollection = client.db("opinioXDB").collection("allposts");
     const commentCollection = client.db("opinioXDB").collection("allComments");
+    const userCollection = client.db("opinioXDB").collection("allUsers");
 
     //Count Comments
-    app.get('/commentsCount', async(req, res) => {
+    app.get("/commentsCount", async (req, res) => {
       const result = await commentCollection.estimatedDocumentCount();
-      res.send({result});
-    })
+      res.send({ result });
+    });
     // Load all posts
     app.get("/posts", async (req, res) => {
       const page = parseInt(req.query.page);
@@ -86,11 +87,60 @@ async function run() {
       res.send({ count });
     });
 
+    // Get a User
+    app.get("/user", async (req, res) => {
+      let query = {};
+      if (req.query?.email) {
+        query = { email: req.query.email };
+        console.log("user Email", req.query?.email);
+      }
+      const result = await userCollection.findOne(query);
+      res.send(result);
+    });
+
+    // filter post by query parameter
+    app.get("/recentPost", async (req, res) => {
+      let query = {};
+      if (req.query?.email) {
+        query = { authorEmail: req.query.email };
+        console.log("recent Post Email", req.query.email);
+      }
+      const result = await postCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // Count total post by user
+    app.get("/totalPost", async (req, res) => {
+      let query = {};
+      if (req.query?.email) {
+        query = { authorEmail: req.query.email };
+        console.log("recent Post Email", req.query.email);
+      }
+      const result = await postCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // Post new post
+    app.post("/posts", async (req, res) => {
+      const newPost = req.body;
+      // console.log(newAssignment);
+      const result = await postCollection.insertOne(newPost);
+      res.send(result);
+    });
+
     // Post a comment
     app.post("/submitComment", async (req, res) => {
       const comment = req.body;
       // console.log(comment);
       const result = await commentCollection.insertOne(comment);
+      res.send(result);
+    });
+
+    // Add a user
+    app.post("/addUser", async (req, res) => {
+      const user = req.body;
+      // console.log(comment);
+      const result = await userCollection.insertOne(user);
       res.send(result);
     });
 
