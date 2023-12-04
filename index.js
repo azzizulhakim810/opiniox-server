@@ -34,7 +34,8 @@ async function run() {
       const result = await commentCollection.estimatedDocumentCount();
       res.send({ result });
     });
-    // Load all posts
+
+    // Load all posts with pagination
     app.get("/posts", async (req, res) => {
       const page = parseInt(req.query.page);
       const size = parseInt(req.query.size);
@@ -73,6 +74,18 @@ async function run() {
       res.send(result);
     });
 
+    // Load all specific user's post 
+    app.get("/allPosts", async (req, res) => {
+      let query = {};
+      if (req.query?.email) {
+        query = { authorEmail: req.query.email };
+        // console.log("recent Post Email", req.query.email);
+      }
+      const result = await postCollection.find(query).toArray();
+      res.send(result);
+    });
+
+
     app.get("/posts/single/:id", async (req, res) => {
       const id = req.params.id;
       // console.log(id);
@@ -92,7 +105,7 @@ async function run() {
       let query = {};
       if (req.query?.email) {
         query = { email: req.query.email };
-        console.log("user Email", req.query?.email);
+        // console.log("user Email", req.query?.email);
       }
       const result = await userCollection.findOne(query);
       res.send(result);
@@ -103,7 +116,7 @@ async function run() {
       let query = {};
       if (req.query?.email) {
         query = { authorEmail: req.query.email };
-        console.log("recent Post Email", req.query.email);
+        // console.log("recent Post Email", req.query.email);
       }
       const result = await postCollection.find(query).toArray();
       res.send(result);
@@ -114,11 +127,32 @@ async function run() {
       let query = {};
       if (req.query?.email) {
         query = { authorEmail: req.query.email };
-        console.log("recent Post Email", req.query.email);
+        // console.log("recent Post Email", req.query.email);
       }
       const result = await postCollection.find(query).toArray();
       res.send(result);
     });
+
+    // comment page 
+    app.get('/allComments', async(req, res) => {
+      /* console.log(req.query?.id);
+      let query = {};
+      if (req.query?.id) {
+        query = { postId: req.query?.id };
+        // console.log("recent Post id", req.query.id);
+      } */
+      // const query = { postId: req.query?.id };
+      const result = await commentCollection.find().toArray();
+      res.send(result);
+    })
+
+    // specific comment page 
+    app.get('/allComments/:id', async(req, res) => {
+     const id = req.params.id;
+     const query = {postId: id}
+      const result = await commentCollection.find(query).toArray();
+      res.send(result);
+    })
 
     // Post new post
     app.post("/posts", async (req, res) => {
@@ -175,8 +209,18 @@ async function run() {
       res.send(result);
     });
 
+    // Delete post 
+    app.delete('/posts/delete/:id', async(req, res) => {
+      // const id = req.query.id;
+      const id = req.params.id;
+      // console.log(id);
+      const query = {_id: new ObjectId(id)};
+      const result = await postCollection.deleteOne(query);
+      res.send(result);
+    })
+
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
