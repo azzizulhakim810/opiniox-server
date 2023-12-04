@@ -40,7 +40,8 @@ async function run() {
       const page = parseInt(req.query.page);
       const size = parseInt(req.query.size);
       const sortSystem = req.query.sortSystem || "popular";
-
+      const searchText = req.query.searchText || "";
+      console.log(searchText);
       // Validate that page and size are valid integers, defaulting to 0 and 10 if not provided
       const validPage = isNaN(page) ? 0 : Math.max(0, page);
       const validSize = isNaN(size) ? 10 : Math.max(1, size); // Adjust the minimum size as needed
@@ -59,6 +60,11 @@ async function run() {
           $addFields: {
             voteDifference: { $subtract: ["$upVote", "$downVote"] },
           },
+        },
+        {
+          $match: {
+            tags: { $regex: searchText, $options: 'i'},
+          }
         },
         {
           $sort: sortQuery,
